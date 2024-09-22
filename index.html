@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Roll Number</title>
+    <script src="https://cdn.jsdelivr.net/npm/react/umd/react.development.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/prop-types/prop-types.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input, select, button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+        const { useState } = React;
+
+        function App() {
+            const [input, setInput] = useState('');
+            const [error, setError] = useState('');
+            const [options, setOptions] = useState([]);
+            const [response, setResponse] = useState(null);
+
+            const validateJSON = (str) => {
+                try {
+                    JSON.parse(str);
+                    return true;
+                } catch {
+                    return false;
+                }
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+
+                if (!validateJSON(input)) {
+                    setError('Invalid JSON format');
+                    return;
+                }
+
+                const jsonData = JSON.parse(input);
+                const apiResponse = await fetch('YOUR_BACKEND_API_URL', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(jsonData),
+                });
+                const data = await apiResponse.json();
+                setResponse(data);
+
+                setOptions(['Alphabets', 'Numbers', 'Highest lowercase alphabet']);
+            };
+
+            const handleSelectChange = (e) => {
+                const selectedOption = e.target.value;
+                if (response) {
+                    const filteredResponse = response.filter(item => {
+                        if (selectedOption === 'Alphabets') return /^[A-Za-z]+$/.test(item);
+                        if (selectedOption === 'Numbers') return /^[0-9]+$/.test(item);
+                        if (selectedOption === 'Highest lowercase alphabet') return /^[a-z]+$/.test(item);
+                        return true;
+                    });
+                    setResponse(filteredResponse);
+                }
+            };
+
+            return (
+                <div>
+                    <h1>Your Roll Number</h1>
+                    <form onSubmit={handleSubmit}>
+                        <textarea
+                            rows="4"
+                            cols="50"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            placeholder='Enter JSON here (e.g., {"data": ["A","C","z"]})'
+                        />
+                        <button type="submit">Submit</button>
+                    </form>
+                    {error && <div className="error">{error}</div>}
+                    {options.length > 0 && (
+                        <div>
+                            <select onChange={handleSelectChange}>
+                                <option value="">Select an option</option>
+                                {options.map((opt, index) => (
+                                    <option key={index} value={opt}>{opt}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+                    {response && (
+                        <div>
+                            <h2>Response:</h2>
+                            <pre>{JSON.stringify(response, null, 2)}</pre>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
